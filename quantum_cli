@@ -1,0 +1,6 @@
+#!/bin/sh
+# Preserve the user's CWD so that relative paths are passed correctly to 
+#+ the underlying Python script.
+CURRENT_DIR="$(dirname "$0")"
+
+python -Wdefault "${CURRENT_DIR}/quantum_cli.py" "$@"
