@@ -73,39 +73,6 @@ class QuantumApi():
   #
   #   curl 'https://api.quantum.socialmetrix.com/v1/accounts/790/projects/15/facebook/profiles/FACEBOOK_119679161426981' -X DELETE -H 'Origin: https://quantum.socialmetrix.com' -H 'Accept-Encoding: gzip, deflate, sdch' -H 'Accept-Language: en-US,en;q=0.8,es-419;q=0.6,es;q=0.4,pt-BR;q=0.2,pt;q=0.2' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.80 Safari/537.36' -H 'Content-Type: application/json' -H 'Accept: application/json, text/plain, */*' -H 'Referer: https://quantum.socialmetrix.com/' -H 'X-Auth-Token: eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJTTVgiLCJpYXQiOjE0NDYxNzA5MDIsImV4cCI6MTQ0Nzg5ODkwMiwicmVxdWVzdCI6eyJ1c2VySWQiOiI4MDZkNjQyYjRhNjFmYTA1NWE5MzdkOGY5ZDFiMjM0ZiIsIm1ldGhvZCI6IkZhY2Vib29rTG9naW4ifX0.R6ISgJiPSkFkiMj9cM4kYIkiA-iFbW1U_Yr7VWRGeiM' -H 'Connection: keep-alive' -H 'DNT: 1' --data-binary '{}' --compressed
 
-#
-# Main
-
-# from sys import argv
-# import os, sys
-# import argparse
-#
-# def main(argv):
-#   _, filename = argv
-#
-#   secret = os.environ.get('QUANTUM_SECRET')
-#   if (secret == None):
-#     print("Secret must be defined. Please set a environment variable QUANTUM_SECRET with your app secret")
-#     sys.exit(1)
-#
-#   api = QuantumApi()
-#
-#   print("Authenticating ...")
-#   authData = api.authenticate(secret)
-#
-#   print("Creating project ...")
-#   project_id = api.create_project()
-#
-#   with open(filename, 'r') as f:
-#     for line in f:
-#       profile = line.rstrip('\r\n')
-#       print("\tAdding profile {0} to project {1}".format(profile, project_id))
-#       api.add_profile(profile)
-#   f.closed
-#
-#   print("\n\nCheck the Project URL here: " + api.project_home_url())
-#   print("\n===== Done =====")
-#   pass
 
 def check_secret(secret):
   if(secret == None):
@@ -120,10 +87,10 @@ def add_profiles(file, project_id, secret):
   api = QuantumApi()
   
   print("Authenticating ...")
-  api.authenticate(check_secret(secret))
+  api.authenticate(secret)
   
   if(project_id == None):
-    print("Creating project ...")
+    print("Creating random project ...")
     project_id = api.create_project()
   else:
     print("Using passed project_id: {}".format(project_id))
@@ -139,10 +106,13 @@ def add_profiles(file, project_id, secret):
 
 
 def view_profiles(project_id, secret):
-  print("App secret is {0}".format(check_secret(secret)))
+  print("App secret is {0}".format(secret))
   print("view_profiles from project: " + project_id)
   pass
 
+def account_limits(secret):
+  raise Exception('Not Implemented')
+  pass
 
 from sys import argv
 import os, sys
@@ -159,17 +129,25 @@ def main(argv):
   add_parser.add_argument("file", help="path for the file containing profiles to add", type=file)
   add_parser.add_argument("--project", help="the project id to insert", type=int)
 
-  # A create command
+  # A view command
   view_parser = subparsers.add_parser('view', help='View project profiles')
   view_parser.add_argument("project", help="project id")
 
+  # A account limits command
+  limit_parser = subparsers.add_parser('limits', help='Show account limits')
+
   try:
       args = parser.parse_args()
+      secret = check_secret(args.secret)
+      
       if (args.command == 'add'):
-        add_profiles(args.file, args.project, args.secret)
+        add_profiles(args.file, args.project, secret)
         
       elif (args.command == 'view'):
-        view_profiles(args.project, args.secret)
+        view_profiles(args.project, secret)
+        
+      elif (args.command == 'limits'):
+        account_limits(secret)
       
   except IOError, msg:
     parser.error(str(msg))
