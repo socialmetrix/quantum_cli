@@ -10,8 +10,6 @@ def check_secret(secret):
 
 def add_profiles(file, project_id, secret):
   api = quantum.API()
-  
-  print("Authenticating ...")
   api.authenticate(secret)
   
   if(project_id == None):
@@ -29,7 +27,6 @@ def add_profiles(file, project_id, secret):
   print("\n\nCheck the Project URL here: " + api.project_home_url())
   pass
 
-
 def view_profiles(project_id, secret):
   api = quantum.API()
   api.authenticate(secret)
@@ -44,15 +41,14 @@ def view_profiles(project_id, secret):
   pass
 
 def account_limits(secret):
-  raise Exception('Not Implemented')
+  raise Exception('Not Implemented Yet')
   pass
 
-#
+
 ###########################################################################
 #
 # Calling Main
-
-
+#
 from sys import argv
 import os, sys
 import argparse
@@ -69,28 +65,29 @@ def main(argv):
   add_parser.add_argument("--project", help="the project id to insert", type=int)
 
   # A view command
-  view_parser = subparsers.add_parser('view', help='View project profiles')
-  view_parser.add_argument("project", help="project id")
+  view_parser = subparsers.add_parser('view', help='View profiles from a project')
+  view_parser.add_argument("project", help="the id of the project you want to extract profiles")
 
   # A account limits command
   limit_parser = subparsers.add_parser('limits', help='Show account limits')
 
   try:
-      args = parser.parse_args()
-      secret = check_secret(args.secret)
-      
-      if (args.command == 'add'):
-        add_profiles(args.file, args.project, secret)
-        
-      elif (args.command == 'view'):
-        view_profiles(args.project, secret)
-        
-      elif (args.command == 'limits'):
-        account_limits(secret)
+    args = parser.parse_args()
+    secret = check_secret(args.secret)
+  
+    if (args.command == 'add'):
+      add_profiles(args.file, args.project, secret)
+    
+    elif (args.command == 'view'):
+      view_profiles(args.project, secret)
+    
+    elif (args.command == 'limits'):
+      account_limits(secret)
       
   except IOError, msg:
     parser.error(str(msg))
     sys.exit(1)
+
 
 if __name__ == "__main__":
   main(sys.argv)
