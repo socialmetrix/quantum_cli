@@ -1,5 +1,4 @@
 import requests, json
-import time
 
 class API():
   def __init__(self):
@@ -32,6 +31,15 @@ class API():
     else:
       raise Exception('Error: ' + json.dumps(result))
 
+  def __delete_from_api(self, url, payload = None, jwt = None):
+    headers = self.__set_header(jwt)
+    dest_url = 'https://api.quantum.socialmetrix.com/{0}'.format(url)
+    # print(dest_url)
+    r = requests.delete(dest_url, params=payload, data="{}", headers=headers)
+    if(not (r.status_code >= 200 and r.status_code < 300)):
+      raise Exception('Error: ' + r.text)
+    pass
+
   # Login / Get a valid JWT and User's Account ID
   def authenticate(self, secret):
     payload = { "method":"API-SECRET", "secret": secret }
@@ -46,7 +54,7 @@ class API():
     }
 
   # Create a new project
-  def create_project(self, name = 'auto-import-{0}'.format(int(time.time()))):
+  def create_project(self, name):
     payload = {'name': name}
     data = self.__post_to_api(url = 'v1/accounts/{0}/projects'.format(self.account_id),
      payload = payload,
@@ -56,13 +64,13 @@ class API():
     return self.project_id
 
   def __detect_network(self, content):
-    if ('facebook.com' in content):
+    if ('facebook.com' in content or 'FACEBOOK_' in content):
       return 'facebook'
-    elif ('twitter.com' in content):
+    elif ('twitter.com' in content or 'TWITTER_' in content):
       return 'twitter'
-    elif ('youtube.com' in content):
+    elif ('youtube.com' in content or 'YOUTUBE_' in content):
       return 'youtube'
-    elif ('instagram.com' in content):
+    elif ('instagram.com' in content or 'INSTAGRAM_' in content):
       return 'instagram'
     else:
       raise Exception('Unsupported link: ' + content)
@@ -83,6 +91,29 @@ class API():
 
     url = 'v1/accounts/{0}/projects/{1}'.format(self.account_id, project_id)
     return self.__get_from_api(url, None, self.jwt)
+
+  def delete_profile(self, profile_id, project_id = None):
+    if(project_id == None and self.project_id == None):
+      raise Exception('project_id must be provided')
+
+    elif (project_id == None and self.project_id != None):
+      project_id = self.project_id
+
+    network = self.__detect_network(profile_id)
+    url = 'v1/accounts/{0}/projects/{1}/{2}/profiles/{3}'.format(self.account_id, project_id, network, profile_id)
+    self.__delete_from_api(url, jwt = self.jwt)
+    pass
+    
+  def delete_project(self, project_id = None):
+    if(project_id == None and self.project_id == None):
+      raise Exception('project_id must be provided')
+
+    elif (project_id == None and self.project_id != None):
+      project_id = self.project_id
+
+    url = 'v1/accounts/{0}/projects/{1}'.format(self.account_id, project_id)
+    self.__delete_from_api(url, jwt = self.jwt)
+    pass
 
   def project_home_url(self):
     return 'https://quantum.socialmetrix.com/#/accounts/{0}/projects/{1}/facebook/profiles/'.format(self.account_id, self.project_id)

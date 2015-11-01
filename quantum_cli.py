@@ -14,15 +14,16 @@ def add_profiles(file, project_id, secret):
   
   if(project_id == None):
     print("Creating random project ...")
-    project_id = api.create_project()
+    project_id = api.create_project(name = 'quantum_cli-{0}'.format(int(time.time())))
   else:
     print("Using passed project_id: {}".format(project_id))
     api.project_id = project_id
 
   for line in file:
     profile = line.rstrip('\r\n')
-    print("\tAdding profile {0} to project {1}".format(profile, project_id))
-    api.add_profile(profile)
+    if (not profile.startswith('#')):
+      print("\tAdding profile {0} to project {1}".format(profile, project_id))
+      api.add_profile(profile)
   
   print("\n\nCheck the Project URL here: " + api.project_home_url())
   pass
@@ -43,14 +44,30 @@ def view_profiles(project_id, secret):
 def account_limits(secret):
   raise Exception('Not Implemented Yet')
   pass
+  
+def delete_project(project_id, secret):
+  api = quantum.API()
+  api.authenticate(secret)
+  if(project_id == None):
+    raise Exception('project_id must be provided')
+
+  # Deleting profiles
+  profiles = api.view_profiles(project_id)
+  for profile in profiles['brands']:
+    print(u'Deleteting profile {} ({})'.format(profile['source']['url'], profile['name']))
+    api.delete_profile(profile_id = profile['id'], project_id = project_id)
+  
+  # Deleting project
+  api.delete_project(project_id = project_id)
+  pass
 
 
 ###########################################################################
 #
 # Calling Main
 #
-from sys import argv
 import os, sys
+import time
 import argparse
 
 def main(argv):
@@ -64,9 +81,13 @@ def main(argv):
   add_parser.add_argument("file", help="path for the file containing profiles to add", type=file)
   add_parser.add_argument("--project", help="the project id to insert", type=int)
 
-  # A view command
+  # view command
   view_parser = subparsers.add_parser('view', help='View profiles from a project')
   view_parser.add_argument("project", help="the id of the project you want to extract profiles")
+
+  # DELETE command
+  delete_parser = subparsers.add_parser('delete-project', help='Delete profiles from a project')
+  delete_parser.add_argument("project", help="the id of the project you want to delete")
 
   # A account limits command
   limit_parser = subparsers.add_parser('limits', help='Show account limits')
@@ -81,6 +102,9 @@ def main(argv):
     elif (args.command == 'view'):
       view_profiles(args.project, secret)
     
+    elif (args.command == 'delete-project'):
+      delete_project(args.project, secret)
+
     elif (args.command == 'limits'):
       account_limits(secret)
       
