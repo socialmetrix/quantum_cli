@@ -62,6 +62,11 @@ class API():
   
     self.project_id = data['id']  
     return self.project_id
+    
+  def list_projects(self):
+    url = 'v1/accounts/{}/projects'.format(self.account_id)
+    data = self.__get_from_api(url, None, self.jwt)
+    return data
 
   def __detect_network(self, content):
     if ('facebook.com' in content or 'FACEBOOK_' in content):

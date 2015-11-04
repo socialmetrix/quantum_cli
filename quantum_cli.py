@@ -54,11 +54,22 @@ def delete_project(project_id, secret):
   # Deleting profiles
   profiles = api.view_profiles(project_id)
   for profile in profiles['brands']:
-    print(u'Deleteting profile {} ({})'.format(profile['source']['url'], profile['name']))
+    out = u'Deleteting profile {} ({})'.format(profile['source']['url'], profile['name'])
+    print unicode(out).encode("utf-8")
     api.delete_profile(profile_id = profile['id'], project_id = project_id)
   
   # Deleting project
   api.delete_project(project_id = project_id)
+  pass
+  
+def view_projects(secret):
+  api = quantum.API()
+  api.authenticate(secret)
+  projects = api.list_projects()
+  print('# id\tname\tamount profiles')
+  for project in projects:
+    out = u'{0}\t{1}\t{2}'.format(project['id'], project['name'], len(project['brands']))
+    print unicode(out).encode("utf-8")
   pass
 
 
@@ -76,20 +87,23 @@ def main(argv):
 
   subparsers = parser.add_subparsers(help='commands', dest='command')
 
-  # A list command
+  # ADD PROFILE command
   add_parser = subparsers.add_parser('add', help='Add profiles to a project')
   add_parser.add_argument("file", help="path for the file containing profiles to add", type=file)
   add_parser.add_argument("--project", help="the project id to insert", type=int)
 
-  # view command
+  # VIEW PROFILES command
   view_parser = subparsers.add_parser('view', help='View profiles from a project')
   view_parser.add_argument("project", help="the id of the project you want to extract profiles")
 
-  # DELETE command
+  # VIEW PROJECTS command
+  view_projects_parser = subparsers.add_parser('view-projects', help='Show active projects')
+  
+  # DELETE PROJECT command
   delete_parser = subparsers.add_parser('delete-project', help='Delete profiles from a project')
   delete_parser.add_argument("project", help="the id of the project you want to delete")
 
-  # A account limits command
+  # ACCOUNT LIMITS command
   limit_parser = subparsers.add_parser('limits', help='Show account limits')
 
   try:
@@ -101,6 +115,9 @@ def main(argv):
     
     elif (args.command == 'view'):
       view_profiles(args.project, secret)
+
+    elif (args.command == 'view-projects'):
+      view_projects(secret)
     
     elif (args.command == 'delete-project'):
       delete_project(args.project, secret)
