@@ -1,3 +1,4 @@
 *.pyc
 test.txt
 profiles-to-add.txt
+.idea

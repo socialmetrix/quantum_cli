@@ -21,7 +21,7 @@ def add_profiles(file, project_id, secret):
 
   for line in file:
     profile = line.rstrip('\r\n')
-    if (not profile.startswith('#')):
+    if (profile.startswith('http')):
       print("\tAdding profile {0} to project {1}".format(profile, project_id))
       api.add_profile(profile)
   
