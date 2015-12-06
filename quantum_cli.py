@@ -1,10 +1,14 @@
 import quantum
 
+def p(str):
+  print(unicode(str).encode("utf-8"))
+  pass
+
 def check_secret(secret):
   if(secret == None):
     secret = os.environ.get('QUANTUM_SECRET')
     if (secret == None):
-      print("Secret must be defined. Please set a environment variable QUANTUM_SECRET or use the parameter --secret with your app secret")
+      p("Secret must be defined. Please set a environment variable QUANTUM_SECRET or use the parameter --secret with your app secret")
       sys.exit(1)
   return secret
 
@@ -13,19 +17,19 @@ def add_profiles(file, project_id, secret):
   api.authenticate(secret)
   
   if(project_id == None):
-    print("Creating random project ...")
+    p("Creating random project ...")
     project_id = api.create_project(name = 'quantum_cli-{0}'.format(int(time.time())))
   else:
-    print("Using passed project_id: {}".format(project_id))
+    p("Using passed project_id: {}".format(project_id))
     api.project_id = project_id
 
   for line in file:
     profile = line.rstrip('\r\n')
     if (profile.startswith('http')):
-      print("\tAdding profile {0} to project {1}".format(profile, project_id))
+      p("\tAdding profile {0} to project {1}".format(profile, project_id))
       api.add_profile(profile)
   
-  print("\n\nCheck the Project URL here: " + api.project_home_url())
+  p("\n\nCheck the Project URL here: " + api.project_home_url())
   pass
 
 def view_profiles(project_id, secret):
@@ -34,11 +38,10 @@ def view_profiles(project_id, secret):
   if(project_id == None):
     raise Exception('project_id must be provided')
   profiles = api.view_profiles(project_id)
-  
-  print('# profile_name: {}'.format(profiles['name']))
-  print('#')
+  p(u'# profile_name: {}'.format(profiles['name']))
+  p('#')
   for profile in profiles['brands']:
-    print(profile['source']['url'])
+    p(profile['source']['url'])
   pass
 
 def account_limits(secret):
@@ -54,8 +57,7 @@ def delete_project(project_id, secret):
   # Deleting profiles
   profiles = api.view_profiles(project_id)
   for profile in profiles['brands']:
-    out = u'Deleteting profile {} ({})'.format(profile['source']['url'], profile['name'])
-    print unicode(out).encode("utf-8")
+    p(u'Deleteting profile {} ({})'.format(profile['source']['url'], profile['name']))
     api.delete_profile(profile_id = profile['id'], project_id = project_id)
   
   # Deleting project
@@ -66,10 +68,9 @@ def view_projects(secret):
   api = quantum.API()
   api.authenticate(secret)
   projects = api.list_projects()
-  print('# id\tname\tamount profiles')
+  p('# id\tname\tamount profiles')
   for project in projects:
-    out = u'{0}\t{1}\t{2}'.format(project['id'], project['name'], len(project['brands']))
-    print unicode(out).encode("utf-8")
+    p(u'{0}\t{1}\t{2}'.format(project['id'], project['name'], len(project['brands'])))
   pass
 
 
