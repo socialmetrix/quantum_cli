@@ -73,6 +73,15 @@ def view_projects(secret):
     p(u'{0}\t{1}\t{2}'.format(project['id'], project['name'], len(project['brands'])))
   pass
 
+def account_users(secret):
+  api = quantum.API()
+  api.authenticate(secret)
+  users = api.users()
+  p('# name\temail\trole')
+  for user in users:
+    p(u'{0} {1}\t{2}\t{3}'.format(user['firstName'], user['lastName'], user['email'], user['role']))
+  pass
+
 
 ###########################################################################
 #
@@ -107,6 +116,9 @@ def main(argv):
   # ACCOUNT LIMITS command
   limit_parser = subparsers.add_parser('limits', help='Show account limits')
 
+  # USERS ON ACCOUNT command
+  users_parser = subparsers.add_parser('users', help='Show users on the account')
+
   try:
     args = parser.parse_args()
     secret = check_secret(args.secret)
@@ -126,10 +138,12 @@ def main(argv):
     elif (args.command == 'limits'):
       account_limits(secret)
       
+    elif (args.command == 'users'):
+      account_users(secret)
+      
   except IOError, msg:
     parser.error(str(msg))
     sys.exit(1)
-
 
 if __name__ == "__main__":
   main(sys.argv)

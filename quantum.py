@@ -122,3 +122,8 @@ class API():
 
   def project_home_url(self):
     return 'https://quantum.socialmetrix.com/#/accounts/{0}/projects/{1}/facebook/profiles/'.format(self.account_id, self.project_id)
+  
+  def users(self):
+    url = 'v1/accounts/{}/users'.format(self.account_id)
+    data = self.__get_from_api(url, None, self.jwt)
+    return data
