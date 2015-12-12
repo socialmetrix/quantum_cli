@@ -40,6 +40,17 @@ class API():
       raise Exception('Error: ' + r.text)
     pass
 
+  def __get_project_id(self, project_id):
+    if(project_id == None and self.project_id == None):
+      raise Exception('project_id must be provided')
+
+    elif (project_id == None and self.project_id != None):
+      return self.project_id
+
+    else:
+      return project_id
+
+
   # Login / Get a valid JWT and User's Account ID
   def authenticate(self, secret):
     payload = { "method":"API-SECRET", "secret": secret }
@@ -88,21 +99,13 @@ class API():
     return self.__post_to_api(url, payload, self.jwt)
     
   def view_profiles(self, project_id = None):
-    if(project_id == None and self.project_id == None):
-      raise Exception('project_id must be provided')
-
-    elif (project_id == None and self.project_id != None):
-      project_id = self.project_id
+    project_id = self.__get_project_id(project_id)
 
     url = 'v1/accounts/{0}/projects/{1}'.format(self.account_id, project_id)
     return self.__get_from_api(url, None, self.jwt)
 
   def delete_profile(self, profile_id, project_id = None):
-    if(project_id == None and self.project_id == None):
-      raise Exception('project_id must be provided')
-
-    elif (project_id == None and self.project_id != None):
-      project_id = self.project_id
+    project_id = self.__get_project_id(project_id)
 
     network = self.__detect_network(profile_id)
     url = 'v1/accounts/{0}/projects/{1}/{2}/profiles/{3}'.format(self.account_id, project_id, network, profile_id)
@@ -110,11 +113,7 @@ class API():
     pass
     
   def delete_project(self, project_id = None):
-    if(project_id == None and self.project_id == None):
-      raise Exception('project_id must be provided')
-
-    elif (project_id == None and self.project_id != None):
-      project_id = self.project_id
+    project_id = self.__get_project_id(project_id)
 
     url = 'v1/accounts/{0}/projects/{1}'.format(self.account_id, project_id)
     self.__delete_from_api(url, jwt = self.jwt)
@@ -125,5 +124,19 @@ class API():
   
   def users(self):
     url = 'v1/accounts/{}/users'.format(self.account_id)
-    data = self.__get_from_api(url, None, self.jwt)
-    return data
+    return self.__get_from_api(url, None, self.jwt)
+
+  def campaign_posts(self, project_id = None, since = None, until = None, campaign_id = None, offset = 10, limit = 10):
+    project_id = self.__get_project_id(project_id)
+
+    url = 'v1/accounts/{}/projects/{}/facebook/campaigns/{}/posts?since={}&until={}&offset={}&limit={}'.format(
+                                                                                            self.account_id,
+                                                                                            project_id,
+                                                                                            campaign_id,
+                                                                                            since,
+                                                                                            until,
+                                                                                            offset,
+                                                                                            limit)
+
+    # print url
+    return self.__get_from_api(url, None, self.jwt)

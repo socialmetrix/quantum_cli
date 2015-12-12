@@ -19,3 +19,27 @@ optional arguments:
   -h, --help            show this help message and exit
   --secret SECRET       set the secret id
 ```
+
+
+##Quantum_API module
+
+###Usage
+```
+import os, quantum
+
+#reading secret from env
+secret = os.environ.get('QUANTUM_SECRET')
+
+api = quantum.API()
+api.authenticate(secret)
+
+projects = api.list_projects()
+
+campaigns = api.campaign_posts(project_id=24, 
+  since='2015-11-01', 
+  until='2015-11-30', 
+  campaign_id=549)
+
+for campaign in campaigns['results']:
+  print campaign['id']
+```
