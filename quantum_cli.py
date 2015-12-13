@@ -218,7 +218,7 @@ def campaign_posts(secret, project_id = None, since = None, until = None, campai
       camp['stats']['engagementRate']
     ])
 
-  output(headers, data)
+  output(headers, data, print_mode)
   pass
 
 if __name__ == "__main__":
