@@ -179,7 +179,8 @@ def view_projects(secret):
       project['name'],
       len(project['brands'])
     ])
-    output(headers, data, print_mode)
+  
+  output(headers, data, print_mode)
   pass
 
 def account_users(secret):
