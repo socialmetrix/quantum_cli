@@ -1,23 +1,24 @@
 import requests, json
 
 class API():
+
   def __init__(self):
     self.jwt = None
     self.account_id = None
     self.project_id = None
-    
+
   def __set_header(self, jwt = None):
     headers = {'Content-Type': 'application/json'}
     if (jwt != None):
       headers['X-Auth-Token']=jwt
     return headers
-  
-  def __get_from_api(self, url, payload, jwt = None):
+
+  def __get_from_api(self, url, params, jwt=None):
     headers = self.__set_header(jwt)
     dest_url = 'https://api.quantum.socialmetrix.com/{0}'.format(url)
-    r = requests.get(dest_url, params=payload, headers=headers)
+    r = requests.get(dest_url, params=params, headers=headers)
     result = r.json()
-    if(r.status_code >= 200 and r.status_code < 300):
+    if (r.status_code >= 200 and r.status_code < 300):
       return result
     else:
       raise Exception('Error: ' + json.dumps(result))
@@ -50,15 +51,21 @@ class API():
     else:
       return project_id
 
+  def __required(self, value, message=None):
+    if (value is None):
+      if (message is None):
+        raise Exception("value can't be None")
+      else:
+        raise Exception(message)
 
   # Login / Get a valid JWT and User's Account ID
   def authenticate(self, secret):
     payload = { "method":"API-SECRET", "secret": secret }
     data = self.__post_to_api(url = 'login', payload = payload)
-  
+
     self.jwt = data['jwt']
     self.account_id = data['user']['accountId']
-  
+
     return {
       "account_id": self.account_id,
       "jwt": self.jwt
@@ -70,10 +77,10 @@ class API():
     data = self.__post_to_api(url = 'v1/accounts/{0}/projects'.format(self.account_id),
      payload = payload,
      jwt = self.jwt)
-  
-    self.project_id = data['id']  
+
+    self.project_id = data['id']
     return self.project_id
-    
+
   def list_projects(self):
     url = 'v1/accounts/{}/projects'.format(self.account_id)
     data = self.__get_from_api(url, None, self.jwt)
@@ -97,7 +104,7 @@ class API():
     url = 'v1/accounts/{0}/projects/{1}/{2}/profiles'.format(self.account_id, self.project_id, network)
     payload = {'url': profile}
     return self.__post_to_api(url, payload, self.jwt)
-    
+
   def view_profiles(self, project_id = None):
     project_id = self.__get_project_id(project_id)
 
@@ -111,7 +118,7 @@ class API():
     url = 'v1/accounts/{0}/projects/{1}/{2}/profiles/{3}'.format(self.account_id, project_id, network, profile_id)
     self.__delete_from_api(url, jwt = self.jwt)
     pass
-    
+
   def delete_project(self, project_id = None):
     project_id = self.__get_project_id(project_id)
 
@@ -121,22 +128,67 @@ class API():
 
   def project_home_url(self):
     return 'https://quantum.socialmetrix.com/#/accounts/{0}/projects/{1}/facebook/profiles/'.format(self.account_id, self.project_id)
-  
+
   def users(self):
     url = 'v1/accounts/{}/users'.format(self.account_id)
     return self.__get_from_api(url, None, self.jwt)
 
-  def campaign_posts(self, project_id = None, since = None, until = None, campaign_id = None, offset = 10, limit = 10):
+  # def campaign_posts(self, project_id = None, since = None, until = None, campaign_id = None, offset = 10, limit = 10):
+  #   project_id = self.__get_project_id(project_id)
+  #   self.__required(since, "since is not set")
+  #   self.__required(until, "until is not set")
+  #
+  #   url = 'v1/accounts/{}/projects/{}/facebook/campaigns/{}/posts'.format(
+  #     self.account_id,
+  #     project_id,
+  #     campaign_id)
+  #
+  #   params = {
+  #     'since': since,
+  #     'until': until,
+  #     'offset': offset,
+  #     'limit': limit
+  #   }
+  #
+  #   return self.__get_from_api(url, params, self.jwt)
+
+  def facebook_posts(self, project_id = None, profile = None, since = None, until = None, limit = 10):
     project_id = self.__get_project_id(project_id)
+    self.__required(profile, "profile is not set")
+    self.__required(since, "since is not set")
+    self.__required(until, "until is not set")
 
-    url = 'v1/accounts/{}/projects/{}/facebook/campaigns/{}/posts?since={}&until={}&offset={}&limit={}'.format(
-                                                                                            self.account_id,
-                                                                                            project_id,
-                                                                                            campaign_id,
-                                                                                            since,
-                                                                                            until,
-                                                                                            offset,
-                                                                                            limit)
+    url = 'v1/accounts/{}/projects/{}/facebook/profiles/{}/posts'.format(
+      self.account_id,
+      project_id,
+      profile)
 
-    # print url
-    return self.__get_from_api(url, None, self.jwt)
+    # TODO: Implement field => offset:{"datetime":"2015-11-28T11:02:05-02:00","entity":"125812234121863_904218426281236"}
+    # TODO: Implement field owner (admin or user)
+    # TODO: Implement field type (status,link,video,photo)
+    params = {
+      'since': since,
+      'until': until,
+      'limit': limit,
+      'owner': 'admin',
+      'type': 'status,link,video,photo'
+    }
+
+    return self.__get_from_api(url, params, self.jwt)
+
+
+  def facebook_posts_stats(self, project_id = None, since = None, until = None, *profiles):
+
+    url = 'v1/accounts/{}/projects/{}/facebook/profiles/posts-interactions/count/date'.format(
+      self.account_id,
+      project_id)
+
+    ids = ','.join(list(profiles))
+
+    params = {
+      'since': since,
+      'until': until,
+      'ids': ids
+    }
+
+    return self.__get_from_api(url, params, self.jwt)

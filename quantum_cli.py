@@ -6,7 +6,6 @@ print_mode = "table"
 
 ###########################################################################
 #
-# Calling Main
 #
 import os, sys
 import time
@@ -42,13 +41,21 @@ def main(argv):
   users_parser = subparsers.add_parser('users', help='Show users on the account')
 
   # Listing posts of a campaign
-  campaign_posts_parser = subparsers.add_parser('campaign-posts', help="Show posts that belongs to the campaign")
-  campaign_posts_parser.add_argument("project_id", help='Project ID that contains the campaign', type=int)
-  campaign_posts_parser.add_argument("campaign_id", help='Campaign ID', type=int)
-  campaign_posts_parser.add_argument("since", help='Begin of date range, format: YYYY-MM-DD')
-  campaign_posts_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
-  campaign_posts_parser.add_argument("--offset", help='Offset from the beginning of the list. Default: 0', type=int, default=0)
-  campaign_posts_parser.add_argument("--limit", help='Quantity of records returned on each command. Default: 10', type=int,  default=10)
+  # campaign_posts_parser = subparsers.add_parser('campaign-posts', help="Show posts that belongs to the campaign")
+  # campaign_posts_parser.add_argument("project_id", help='Project ID that contains the campaign', type=int)
+  # campaign_posts_parser.add_argument("campaign_id", help='Campaign ID', type=int)
+  # campaign_posts_parser.add_argument("since", help='Begin of date range, format: YYYY-MM-DD')
+  # campaign_posts_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
+  # campaign_posts_parser.add_argument("--offset", help='Offset from the beginning of the list. Default: 0', type=int, default=0)
+  # campaign_posts_parser.add_argument("--limit", help='Quantity of records returned on each command. Default: 10', type=int,  default=10)
+
+  # Listing Posts from a Social Network
+  posts_parser = subparsers.add_parser('posts', help="Show posts that belongs to a profile (account)")
+  posts_parser.add_argument("project_id", help='Project ID that contains the profile', type=int)
+  posts_parser.add_argument("profile_id", help='Profile ID is the ID of a fanpage or account')
+  posts_parser.add_argument("since", help='Begin of date range, format: YYYY-MM-DD')
+  posts_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
+  posts_parser.add_argument("--limit", help='Quantity of records returned on each command. Default: 10', type=int,  default=10)
 
 
   try:
@@ -77,14 +84,22 @@ def main(argv):
     elif (args.command == 'users'):
       account_users(secret)
 
-    elif (args.command == 'campaign-posts'):
-      campaign_posts(secret = secret,
-                     project_id = args.project_id,
-                     since = args.since,
-                     until = args.until,
-                     campaign_id = args.campaign_id,
-                     offset = args.offset,
-                     limit = args.limit)
+    # elif (args.command == 'campaign-posts'):
+    #   campaign_posts(secret = secret,
+    #                  project_id = args.project_id,
+    #                  since = args.since,
+    #                  until = args.until,
+    #                  campaign_id = args.campaign_id,
+    #                  offset = args.offset,
+    #                  limit = args.limit)
+
+    elif (args.command == 'posts'):
+      posts(secret = secret,
+            project_id = args.project_id,
+            profile_id = args.profile_id,
+            since = args.since,
+            until = args.until,
+            limit = args.limit)
 
   except IOError, msg:
     parser.error(str(msg))
@@ -171,7 +186,7 @@ def view_projects(secret):
   api.authenticate(secret)
   projects = api.list_projects()
 
-  headers = ['id', 'name', 'qty of profiles']
+  headers = ['id', 'name', 'qty_of_profiles']
   data = []
   for project in projects:
     data.append([
@@ -188,7 +203,7 @@ def account_users(secret):
   api.authenticate(secret)
   users = api.users()
 
-  headers = ['name', 'email', 'role', 'last login']
+  headers = ['name', 'email', 'role', 'last_login']
   data = []
   for user in users:
     data.append([
@@ -201,25 +216,80 @@ def account_users(secret):
   output(headers, data, print_mode)
   pass
 
-def campaign_posts(secret, project_id = None, since = None, until = None, campaign_id = None, offset = 10, limit = 10):
+# def campaign_posts(secret, project_id = None, since = None, until = None, campaign_id = None, offset = 10, limit = 10):
+#   api = quantum.API()
+#   api.authenticate(secret)
+#   campaigns = api.campaign_posts(project_id, since, until, campaign_id, offset, limit)
+#
+#   headers = ['post_id', 'created_time', 'likes', 'comments', 'shares', 'interactions', 'engagement_rate']
+#   data = []
+#   for camp in campaigns['results']:
+#     data.append([
+#       camp['id'],
+#       camp['createdTime'],
+#       camp['stats']['likes'],
+#       camp['stats']['comments'],
+#       camp['stats']['shares'],
+#       camp['stats']['interactions'],
+#       camp['stats']['engagementRate']
+#     ])
+#
+#   output(headers, data, print_mode)
+#   pass
+
+
+def posts(secret, project_id=None, profile_id=None, since=None, until=None, limit=10):
   api = quantum.API()
   api.authenticate(secret)
-  campaigns = api.campaign_posts(project_id, since, until, campaign_id, offset, limit)
+  posts = api.facebook_posts(project_id, profile_id, since, until, limit)
 
-  headers = ['post_id', 'likes', 'comments', 'shares', 'interactions', 'engagementRate']
+  posts_data = {}
+  for post in posts['results']:
+    campaign_info = post['campaignInfo']
+    if(campaign_info is None):
+      campaign_id = ''
+      campaign_name = ''
+    else:
+      campaign_id = campaign_info['campaign']['id']
+      campaign_name = campaign_info['campaign']['name']
+
+    posts_data[post['id']] = [
+      post['createdTime'],
+      campaign_id,
+      campaign_name
+    ]
+
+  posts_ids = posts_data.keys()
+  stats = api.facebook_posts_stats(project_id, since, until, *posts_ids)
+
+  stats_data = {}
+  for stat in stats['results']:
+    values = stat['currentTotal']
+
+    stats_data[stat['id']] = [
+      values['likes'],
+      values['comments'],
+      values['shares'],
+      values['interactions'],
+      values['engagementRate']
+    ]
+
   data = []
-  for camp in campaigns['results']:
-    data.append([
-      camp['id'],
-      camp['stats']['likes'],
-      camp['stats']['comments'],
-      camp['stats']['shares'],
-      camp['stats']['interactions'],
-      camp['stats']['engagementRate']
-    ])
+  for post_id, post_metadata in posts_data.iteritems():
+    data.append(
+      # Build the line with relevant information, split the post_metadata array, leaving campaign info
+      # to the end of line
+      [post_id] + post_metadata[:1] + stats_data[post_id] + post_metadata[1:]
+    )
 
+  headers = ['post_id', 'created_time', 'likes', 'comments', 'shares', 'interactions', 'engagement_rate', 'campaign_id', 'campaign_name']
   output(headers, data, print_mode)
   pass
+
+
+#####
+# CALL MAIN
+#
 
 if __name__ == "__main__":
   main(sys.argv)
