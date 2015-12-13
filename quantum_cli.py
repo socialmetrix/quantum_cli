@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf8 -*-
+
 import quantum
 from tabulate import tabulate
 import csv
@@ -113,13 +116,14 @@ def p(content):
   print unicode(content).encode("utf-8")
 
 def output(headers, data, mode="table"):
-  if(mode == "table"):
+  if (mode == "table"):
     p(tabulate(data, headers))
 
   else:
     writer = csv.writer(sys.stdout)
     writer.writerows([headers])
-    writer.writerows(data)
+    for line in data:
+      writer.writerows([[unicode(item).encode('utf-8') for item in line]])
 
 def check_secret(secret):
   if(secret == None):
@@ -243,7 +247,8 @@ def posts(secret, project_id=None, profile_id=None, since=None, until=None, limi
   api.authenticate(secret)
   posts = api.facebook_posts(project_id, profile_id, since, until, limit)
 
-  posts_data = {}
+  # Getting posts metadata
+  posts_metadata = {}
   for post in posts['results']:
     campaign_info = post['campaignInfo']
     if(campaign_info is None):
@@ -253,13 +258,14 @@ def posts(secret, project_id=None, profile_id=None, since=None, until=None, limi
       campaign_id = campaign_info['campaign']['id']
       campaign_name = campaign_info['campaign']['name']
 
-    posts_data[post['id']] = [
+    posts_metadata[post['id']] = [
       post['createdTime'],
       campaign_id,
       campaign_name
     ]
 
-  posts_ids = posts_data.keys()
+  # Getting posts stats
+  posts_ids = posts_metadata.keys()
   stats = api.facebook_posts_stats(project_id, since, until, *posts_ids)
 
   stats_data = {}
@@ -274,11 +280,12 @@ def posts(secret, project_id=None, profile_id=None, since=None, until=None, limi
       values['engagementRate']
     ]
 
+  # Joining posts metadata with posts stats
   data = []
-  for post_id, post_metadata in posts_data.iteritems():
+  for post_id, post_metadata in posts_metadata.iteritems():
     data.append(
-      # Build the line with relevant information, split the post_metadata array, leaving campaign info
-      # to the end of line
+      # Build the line with relevant information, split the post_metadata array,
+      # leaving campaign info to the end of line
       [post_id] + post_metadata[:1] + stats_data[post_id] + post_metadata[1:]
     )
 
