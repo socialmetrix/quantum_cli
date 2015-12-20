@@ -1,5 +1,6 @@
-import requests
 import json
+
+import requests
 
 
 class API:
@@ -138,25 +139,6 @@ class API:
         url = 'v1/accounts/{}/users'.format(self.account_id)
         return self.__get_from_api(url, None, self.jwt)
 
-    # def campaign_posts(self, project_id = None, since = None, until = None, campaign_id = None, offset = 10, limit = 10):
-    #   project_id = self.__get_project_id(project_id)
-    #   self.__required(since, "since is not set")
-    #   self.__required(until, "until is not set")
-    #
-    #   url = 'v1/accounts/{}/projects/{}/facebook/campaigns/{}/posts'.format(
-    #     self.account_id,
-    #     project_id,
-    #     campaign_id)
-    #
-    #   params = {
-    #     'since': since,
-    #     'until': until,
-    #     'offset': offset,
-    #     'limit': limit
-    #   }
-    #
-    #   return self.__get_from_api(url, params, self.jwt)
-
     def facebook_posts(self, project_id=None, profile=None, since=None, until=None, limit=10):
         project_id = self.__get_project_id(project_id)
         self.__required(profile, "profile is not set")
@@ -164,9 +146,9 @@ class API:
         self.__required(until, "until is not set")
 
         url = 'v1/accounts/{}/projects/{}/facebook/profiles/{}/posts'.format(
-            self.account_id,
-            project_id,
-            profile)
+                self.account_id,
+                project_id,
+                profile)
 
         # TODO: Implement field => offset:{"datetime":"2015-11-28T11:02:05-02:00","entity":"125812234121863_904218426281236"}
         # TODO: Implement field owner (admin or user)
@@ -182,10 +164,35 @@ class API:
         return self.__get_from_api(url, params, self.jwt)
 
     def facebook_posts_stats(self, project_id=None, since=None, until=None, *profiles):
+        p_id = self.__get_project_id(project_id)
+        self.__required(since, "since is not set")
+        self.__required(until, "until is not set")
+
+        # if len(profiles) == 0:
 
         url = 'v1/accounts/{}/projects/{}/facebook/profiles/posts-interactions/count/date'.format(
-            self.account_id,
-            project_id)
+                self.account_id,
+                p_id)
+
+        ids = ','.join(list(profiles))
+
+        params = {
+            'since': since,
+            'until': until,
+            'ids': ids
+        }
+
+        return self.__get_from_api(url, params, self.jwt)
+
+    def pages_stats(self, project_id=None, network='facebook', since=None, until=None, *profiles):
+        project_id = self.__get_project_id(project_id)
+        self.__required(since, "since is not set")
+        self.__required(until, "until is not set")
+
+        url = 'v1/accounts/{}/projects/{}/{}/profiles/stat-summary'.format(
+                self.account_id,
+                project_id,
+                network.lower())
 
         ids = ','.join(list(profiles))
 

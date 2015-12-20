@@ -4,6 +4,7 @@
 import argparse
 import csv
 import os
+import re
 import sys
 import time
 
@@ -34,8 +35,8 @@ def main():
     add_parser.add_argument("--project", help="the project id to insert", type=int)
 
     # VIEW PROFILES command
-    view_parser = subparsers.add_parser('view', help='View profiles from a project')
-    view_parser.add_argument("project", help="the id of the project you want to extract profiles", type=int)
+    # view_parser = subparsers.add_parser('view', help='View profiles from a project')
+    # view_parser.add_argument("project", help="the id of the project you want to extract profiles", type=int)
 
     # VIEW PROJECTS command
     subparsers.add_parser('view-projects', help='Show active projects')
@@ -50,15 +51,6 @@ def main():
     # USERS ON ACCOUNT command
     subparsers.add_parser('users', help='Show users on the account')
 
-    # Listing posts of a campaign
-    # campaign_posts_parser = subparsers.add_parser('campaign-posts', help="Show posts that belongs to the campaign")
-    # campaign_posts_parser.add_argument("project_id", help='Project ID that contains the campaign', type=int)
-    # campaign_posts_parser.add_argument("campaign_id", help='Campaign ID', type=int)
-    # campaign_posts_parser.add_argument("since", help='Begin of date range, format: YYYY-MM-DD')
-    # campaign_posts_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
-    # campaign_posts_parser.add_argument("--offset", help='Offset from the beginning of the list. Default: 0', type=int, default=0)
-    # campaign_posts_parser.add_argument("--limit", help='Quantity of records returned on each command. Default: 10', type=int,  default=10)
-
     # Listing Posts from a Social Network
     posts_parser = subparsers.add_parser('posts', help="Show posts that belongs to a profile (account)")
     posts_parser.add_argument("project_id", help='Project ID that contains the profile', type=int)
@@ -67,6 +59,12 @@ def main():
     posts_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
     posts_parser.add_argument("--limit", help='Quantity of records returned on each command. Default: 10', type=int,
                               default=10)
+
+    # Listing Pages with Stats from a Social Network
+    view_profiles_parser = subparsers.add_parser('view-profiles', help="Show profiles (accounts) with statistics from a project")
+    view_profiles_parser.add_argument("project_id", help='Project ID that contains the profile', type=int)
+    view_profiles_parser.add_argument("since", help='Begin of date range, format: YYYY-MM-DD')
+    view_profiles_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
 
     try:
         args = parser.parse_args()
@@ -79,8 +77,8 @@ def main():
         if args.command == 'add':
             add_profiles(args.file, args.project, secret)
 
-        elif args.command == 'view':
-            view_profiles(args.project, secret)
+        # elif args.command == 'view':
+        #     view_profiles(args.project, secret)
 
         elif args.command == 'view-projects':
             view_projects(secret)
@@ -94,15 +92,6 @@ def main():
         elif args.command == 'users':
             account_users(secret)
 
-        # elif (args.command == 'campaign-posts'):
-        #   campaign_posts(secret = secret,
-        #                  project_id = args.project_id,
-        #                  since = args.since,
-        #                  until = args.until,
-        #                  campaign_id = args.campaign_id,
-        #                  offset = args.offset,
-        #                  limit = args.limit)
-
         elif args.command == 'posts':
             posts(secret=secret,
                   project_id=args.project_id,
@@ -110,6 +99,12 @@ def main():
                   since=args.since,
                   until=args.until,
                   limit=args.limit)
+
+        elif args.command == 'view-profiles':
+            profiles_from_project(secret=secret,
+                                  project_id=args.project_id,
+                                  since=args.since,
+                                  until=args.until)
 
     except IOError, msg:
         parser.error(str(msg))
@@ -166,17 +161,54 @@ def add_profiles(filename, project_id, secret):
     pass
 
 
-def view_profiles(project_id, secret):
-    api = quantum.API()
-    api.authenticate(secret)
-    if project_id is None:
-        raise Exception('project_id must be provided')
-    profiles = api.view_profiles(project_id)
-    p(u'# profile_name: {}'.format(profiles['name']))
-    p('#')
-    for profile in profiles['brands']:
-        p(profile['source']['url'])
-    pass
+def __extract_username_from_instagram_url(url):
+    p = re.compile('https://(www\.)?instagram\.com/([^/]+)')
+    m = p.match(url)
+    if m:
+        return m.group(2)
+    else:
+        return None
+
+
+def __extract_username_name_from_profile(profile):
+    source = profile['sourceType']
+    if source == 'FACEBOOK':
+        return profile['username'], profile['name']
+    elif source == 'TWITTER':
+        return profile['screenName'], profile['name']
+    elif source == 'YOUTUBE':
+        # TODO: FIX API. It is not exposing username
+        return '', profile['name']
+    elif source == 'INSTAGRAM':
+        # TODO: FIX API. It is not exposing username
+        username = __extract_username_from_instagram_url(profile['source']['url'])
+        return username, profile['name']
+    else:
+        raise Exception('Unsupported source: ' + source)
+
+
+# def view_profiles(project_id, secret):
+#     api = quantum.API()
+#     api.authenticate(secret)
+#     if project_id is None:
+#         raise Exception('project_id must be provided')
+#     profiles = api.view_profiles(project_id)
+#     # p(u'# profile_name: {}\n#'.format(profiles['name']))
+#     headers = ['kind', 'id', 'url', 'username', 'name']
+#     data = []
+#     for profile in profiles['brands']:
+#         username, name = __extract_username_name_from_profile(profile)
+#
+#         data.append([
+#             profile['sourceType'],
+#             profile['source']['id'],
+#             profile['source']['url'],
+#             username,
+#             name
+#         ])
+#
+#     output(headers, data, output_format)
+#     pass
 
 
 def account_limits(secret):
@@ -238,28 +270,6 @@ def account_users(secret):
     pass
 
 
-# def campaign_posts(secret, project_id = None, since = None, until = None, campaign_id = None, offset = 10, limit = 10):
-#   api = quantum.API()
-#   api.authenticate(secret)
-#   campaigns = api.campaign_posts(project_id, since, until, campaign_id, offset, limit)
-#
-#   headers = ['post_id', 'created_time', 'likes', 'comments', 'shares', 'interactions', 'engagement_rate']
-#   data = []
-#   for camp in campaigns['results']:
-#     data.append([
-#       camp['id'],
-#       camp['createdTime'],
-#       camp['stats']['likes'],
-#       camp['stats']['comments'],
-#       camp['stats']['shares'],
-#       camp['stats']['interactions'],
-#       camp['stats']['engagementRate']
-#     ])
-#
-#   output(headers, data, output_format)
-#   pass
-
-
 def posts(secret, project_id=None, profile_id=None, since=None, until=None, limit=10):
     api = quantum.API()
     api.authenticate(secret)
@@ -270,7 +280,7 @@ def posts(secret, project_id=None, profile_id=None, since=None, until=None, limi
     for post in posts_data['results']:
         campaign_info = post['campaignInfo']
         if campaign_info is None:
-            campaign_id = ''
+            campaign_id = 0
             campaign_name = ''
         else:
             campaign_id = campaign_info['campaign']['id']
@@ -302,13 +312,59 @@ def posts(secret, project_id=None, profile_id=None, since=None, until=None, limi
     data = []
     for post_id, post_metadata in posts_metadata.iteritems():
         data.append(
-            # Build the line with relevant information, split the post_metadata array,
-            # leaving campaign info to the end of line
-            [post_id] + post_metadata[:1] + stats_data[post_id] + post_metadata[1:]
+                # Build the line with relevant information, split the post_metadata array,
+                # leaving campaign info to the end of line
+                [post_id] + post_metadata[:1] + stats_data[post_id] + post_metadata[1:]
         )
 
     headers = ['post_id', 'created_time', 'likes', 'comments', 'shares', 'interactions', 'engagement_rate',
                'campaign_id', 'campaign_name']
+    output(headers, data, output_format)
+    pass
+
+
+def profiles_from_project(secret, project_id=None, since=None, until=None):
+    """Create a table containing profiles with statistics from a project"""
+    api = quantum.API()
+    api.authenticate(secret)
+    profiles = api.view_profiles(project_id)
+
+    data = []
+    profiles_metadata = {}
+    for profile in profiles['brands']:
+        source = profile['sourceType']
+
+        if not profiles_metadata.has_key(source):
+            profiles_metadata[source] = {}
+
+        username, name = __extract_username_name_from_profile(profile)
+        profile_id = profile['source']['id']
+
+        profiles_metadata[source][profile_id] = [
+            profile['sourceType'],
+            profile['source']['id'],
+            profile['source']['url'],
+            username,
+            name
+        ]
+
+    for source in profiles_metadata.keys():
+        ids = profiles_metadata[source].keys()
+        stats = api.pages_stats(project_id, source, since, until, *ids)
+
+        for stat in stats['results']:
+            metrics = stat['data']['current']
+
+            if source == 'FACEBOOK' or source == 'INSTAGRAM':
+                metric = metrics['totalFans']
+            elif source == 'TWITTER':
+                metric = metrics['totalFollowers']
+            else:
+                metric = metrics['totalSubscribers']
+
+            data.append(profiles_metadata[source][stat['id']] + [metric])
+
+    headers = ['kind', 'page_id', 'url', 'username', 'name', 'community_count']
     output(headers, data, output_format)
     pass
 

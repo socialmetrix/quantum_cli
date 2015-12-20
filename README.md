@@ -42,6 +42,10 @@ secret = os.environ.get('QUANTUM_SECRET')
 api = quantum.API()
 api.authenticate(secret)
 
+
+profiles = api.view_profiles(23)
+
+
 projects = api.list_projects()
 for project in projects:
   print project['name']
@@ -51,6 +55,11 @@ posts = api.facebook_posts(24, '122531974426912', '2015-11-01', '2015-11-30', li
 for post in posts['results']:
   print post['id']
 
+
+
+pages_stats = api.facebook_pages_stats(25, '2015-11-01', '2015-11-30', '179903722029183', '178297347303')
+for stats in pages_stats['results']:
+    print stats['data']['current']
 
 ```
 
