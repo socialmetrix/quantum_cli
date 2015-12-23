@@ -56,10 +56,12 @@ for post in posts['results']:
   print post['id']
 
 
-
 pages_stats = api.facebook_pages_stats(25, '2015-11-01', '2015-11-30', '179903722029183', '178297347303')
 for stats in pages_stats['results']:
     print stats['data']['current']
+    
+# invite a user to project(s)
+api.invite_user('email@address.net', 'ANALYST', 25, 14, 16)
 
 ```
 

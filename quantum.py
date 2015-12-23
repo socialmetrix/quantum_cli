@@ -203,3 +203,13 @@ class API:
         }
 
         return self.__get_from_api(url, params, self.jwt)
+
+    def invite_user(self, email, role='MANAGER', *projects):
+        if role == 'ANALYST' and len(projects) == 0:
+            raise Exception("ANALYST role needs to be invited to at least one project")
+
+        payload = {'accountId': self.account_id, 'email': email, 'role': role, 'projectIds': list(projects)}
+        data = self.__post_to_api(url='v1/accounts/{0}/invites'.format(self.account_id),
+                                  payload=payload,
+                                  jwt=self.jwt)
+        return data
