@@ -32,7 +32,7 @@ You can use [quantum.py](quantum.py) on your own programs.
 **IMPORTANT:** this is beta code, the module API is been heavily developed and interfaces may change.
 
 ###Usage
-```
+```python
 import os, quantum
 # reload(quantum)
 
