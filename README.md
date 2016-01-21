@@ -1,6 +1,22 @@
 # Socialmetrix Quantum Client Utility
 This project contains a few useful functions to manage your Quantum's instance
 
+##Install
+```bash
+git clone https://github.com/socialmetrix/quantum_cli.git
+cd quantum_cli.git
+pip -r requirements.txt
+
+quantum_cli --help
+```
+
+You must provide your API Secret in order to use this tool.
+You can set it using `--secret` or setting an environment variable `QUANTUM_SECRET`, for example adding this line to your `.bashrc`:
+
+```bash
+export QUANTUM_SECRET=0220a22d27be69efffffffff54aa9840e5c4136e
+```
+
 ##Usage
 ```
 usage: quantum_cli [-h] [--secret SECRET] [--csv]
