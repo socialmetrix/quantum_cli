@@ -5,8 +5,13 @@ This project contains a few useful functions to manage your Quantum's instance
 ```bash
 git clone https://github.com/socialmetrix/quantum_cli.git
 cd quantum_cli.git
+
+# if you use PIP
 pip -r requirements.txt
 
+# if you use Anaconda
+conda env create -f environment.yml
+source activate quantum_cli
 quantum_cli --help
 ```
 
