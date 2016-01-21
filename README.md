@@ -12,7 +12,6 @@ pip -r requirements.txt
 # if you use Anaconda
 conda env create -f environment.yml
 source activate quantum_cli
-quantum_cli --help
 ```
 
 You must provide your API Secret in order to use this tool.
