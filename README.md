@@ -23,27 +23,29 @@ export QUANTUM_SECRET=0220a22d27be69efffffffff54aa9840e5c4136e
 
 ##Usage
 ```
-usage: quantum_cli [-h] [--secret SECRET] [--csv]
-                   {add,view,view-projects,delete-project,limits,users,posts}
+usage: quantum_cli [-h] [--secret SECRET] [--csv] [--api-url API_URL]
+                   {add,view-projects,delete-project,limits,users,posts,view-profiles}
                    ...
 
 Quantum Client Utility
 
 positional arguments:
-  {add,view,view-projects,delete-project,limits,users,posts}
+  {add,view-projects,delete-project,limits,users,posts,view-profiles}
                         commands
     add                 Add profiles to a project
-    view                View profiles from a project
     view-projects       Show active projects
     delete-project      Delete a project including all profiles
     limits              Show account limits
     users               Show users on the account
     posts               Show posts that belongs to a profile (account)
+    view-profiles       Show profiles (accounts) with statistics from a
+                        project
 
 optional arguments:
   -h, --help            show this help message and exit
-  --secret SECRET       set the secret id
+  --secret SECRET       set the api secret
   --csv                 Switch output to CSV format
+  --api-url API_URL     Change the default api url
 ```
 
 ##Quantum_API module

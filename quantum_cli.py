@@ -24,8 +24,9 @@ output_format = "table"
 
 def main():
     parser = argparse.ArgumentParser(prog="quantum_cli", description="Quantum Client Utility")
-    parser.add_argument("--secret", help="set the secret id")
+    parser.add_argument("--secret", help="set the api secret")
     parser.add_argument("--csv", help="Switch output to CSV format", action="store_true")
+    parser.add_argument("--api-url", help="Change the default api url")
 
     subparsers = parser.add_subparsers(help='commands', dest='command')
 
@@ -68,32 +69,32 @@ def main():
 
     try:
         args = parser.parse_args()
-        secret = check_secret(args.secret)
+        api = build_api(args.secret, args.api_url)
 
         if args.csv:
             global output_format
             output_format = "csv"
 
         if args.command == 'add':
-            add_profiles(args.file, args.project, secret)
+            add_profiles(api, args.file, args.project)
 
         # elif args.command == 'view':
         #     view_profiles(args.project, secret)
 
         elif args.command == 'view-projects':
-            view_projects(secret)
+            view_projects(api)
 
         elif args.command == 'delete-project':
-            delete_project(args.project, secret)
+            delete_project(api, args.project)
 
         elif args.command == 'limits':
-            account_limits(secret)
+            account_limits(api)
 
         elif args.command == 'users':
-            account_users(secret)
+            account_users(api)
 
         elif args.command == 'posts':
-            posts(secret=secret,
+            posts(api=api,
                   project_id=args.project_id,
                   profile_id=args.profile_id,
                   since=args.since,
@@ -101,7 +102,7 @@ def main():
                   limit=args.limit)
 
         elif args.command == 'view-profiles':
-            profiles_from_project(secret=secret,
+            profiles_from_project(api=api,
                                   project_id=args.project_id,
                                   since=args.since,
                                   until=args.until)
@@ -130,20 +131,18 @@ def output(headers, data, mode="table"):
             writer.writerows([[unicode(item).encode('utf-8') for item in line]])
 
 
-def check_secret(secret):
+def build_api(secret, api_url):
     if secret is None:
         secret = os.environ.get('QUANTUM_SECRET')
         if secret is None:
             p("Secret must be defined." +
               "Please set a environment variable QUANTUM_SECRET or use the parameter --secret with your app secret")
             sys.exit(1)
-    return secret
-
-
-def add_profiles(filename, project_id, secret):
-    api = quantum.API()
+    api = quantum.API(api_url)
     api.authenticate(secret)
+    return api
 
+def add_profiles(api, filename, project_id):
     if project_id is None:
         p("Creating random project ...")
         project_id = api.create_project(name='quantum_cli-{0}'.format(int(time.time())))
@@ -211,14 +210,12 @@ def __extract_username_name_from_profile(profile):
 #     pass
 
 
-def account_limits(secret):
+def account_limits(api):
     raise Exception('Not Implemented Yet')
     pass
 
 
-def delete_project(project_id, secret):
-    api = quantum.API()
-    api.authenticate(secret)
+def delete_project(api, project_id):
     if project_id is None:
         raise Exception('project_id must be provided')
 
@@ -233,9 +230,7 @@ def delete_project(project_id, secret):
     pass
 
 
-def view_projects(secret):
-    api = quantum.API()
-    api.authenticate(secret)
+def view_projects(api):
     projects = api.list_projects()
 
     headers = ['id', 'name', 'qty_of_profiles']
@@ -251,9 +246,7 @@ def view_projects(secret):
     pass
 
 
-def account_users(secret):
-    api = quantum.API()
-    api.authenticate(secret)
+def account_users(api):
     users = api.users()
 
     headers = ['name', 'email', 'role', 'last_login']
@@ -270,9 +263,7 @@ def account_users(secret):
     pass
 
 
-def posts(secret, project_id=None, profile_id=None, since=None, until=None, limit=10):
-    api = quantum.API()
-    api.authenticate(secret)
+def posts(api, project_id=None, profile_id=None, since=None, until=None, limit=10):
     posts_data = api.facebook_posts(project_id, profile_id, since, until, limit)
 
     # Getting posts metadata
@@ -323,10 +314,8 @@ def posts(secret, project_id=None, profile_id=None, since=None, until=None, limi
     pass
 
 
-def profiles_from_project(secret, project_id=None, since=None, until=None):
+def profiles_from_project(api, project_id=None, since=None, until=None):
     """Create a table containing profiles with statistics from a project"""
-    api = quantum.API()
-    api.authenticate(secret)
     profiles = api.view_profiles(project_id)
 
     data = []

@@ -2,12 +2,19 @@ import json
 
 import requests
 
-
 class API:
-    def __init__(self):
+    def __init__(self, api_url = None, ui_url = None):
         self.jwt = None
         self.account_id = None
         self.project_id = None
+        if api_url is None:
+            self.api_url = 'https://api.quantum.socialmetrix.com/v1'
+        else:
+            self.api_url = api_url
+        if ui_url is None:
+            self.ui_url = 'https://quantum.socialmetrix.com'
+        else:
+            self.ui_url = ui_url
 
     @staticmethod
     def __set_header(jwt):
@@ -16,10 +23,12 @@ class API:
             headers['X-Auth-Token'] = jwt
         return headers
 
+    def __build_api_url(self, url):
+        return '{0}/{1}'.format(self.api_url, url)
+
     def __get_from_api(self, url, params, jwt=None):
         headers = self.__set_header(jwt)
-        target_url = 'https://api.quantum.socialmetrix.com/{0}'.format(url)
-        r = requests.get(target_url, params=params, headers=headers)
+        r = requests.get(self.__build_api_url(url), params=params, headers=headers)
         result = r.json()
         if 200 <= r.status_code < 300:
             return result
@@ -28,7 +37,7 @@ class API:
 
     def __post_to_api(self, url, payload, jwt=None):
         headers = self.__set_header(jwt)
-        r = requests.post('https://api.quantum.socialmetrix.com/{0}'.format(url), data=json.dumps(payload),
+        r = requests.post(self.__build_api_url(url), data=json.dumps(payload),
                           headers=headers)
         result = r.json()
         if 200 <= r.status_code < 300:
@@ -38,8 +47,7 @@ class API:
 
     def __delete_from_api(self, url, payload=None, jwt=None):
         headers = self.__set_header(jwt)
-        target_url = 'https://api.quantum.socialmetrix.com/{0}'.format(url)
-        r = requests.delete(target_url, params=payload, data="{}", headers=headers)
+        r = requests.delete(self.__build_api_url(url), params=payload, data="{}", headers=headers)
         if not (200 <= r.status_code < 300):
             raise Exception('Error: ' + r.text)
         pass
@@ -78,7 +86,7 @@ class API:
     # Create a new project
     def create_project(self, name):
         payload = {'name': name}
-        data = self.__post_to_api(url='v1/accounts/{0}/projects'.format(self.account_id),
+        data = self.__post_to_api(url='accounts/{0}/projects'.format(self.account_id),
                                   payload=payload,
                                   jwt=self.jwt)
 
@@ -86,7 +94,7 @@ class API:
         return self.project_id
 
     def list_projects(self):
-        url = 'v1/accounts/{}/projects'.format(self.account_id)
+        url = 'accounts/{}/projects'.format(self.account_id)
         data = self.__get_from_api(url, None, self.jwt)
         return data
 
@@ -106,37 +114,36 @@ class API:
     # Add new profile
     def add_profile(self, profile):
         network = self.__detect_network(profile)
-        url = 'v1/accounts/{0}/projects/{1}/{2}/profiles'.format(self.account_id, self.project_id, network)
+        url = 'accounts/{0}/projects/{1}/{2}/profiles'.format(self.account_id, self.project_id, network)
         payload = {'url': profile}
         return self.__post_to_api(url, payload, self.jwt)
 
     def view_profiles(self, project_id=None):
         project_id = self.__get_project_id(project_id)
 
-        url = 'v1/accounts/{0}/projects/{1}'.format(self.account_id, project_id)
+        url = 'accounts/{0}/projects/{1}'.format(self.account_id, project_id)
         return self.__get_from_api(url, None, self.jwt)
 
     def delete_profile(self, profile_id, project_id=None):
         project_id = self.__get_project_id(project_id)
 
         network = self.__detect_network(profile_id)
-        url = 'v1/accounts/{0}/projects/{1}/{2}/profiles/{3}'.format(self.account_id, project_id, network, profile_id)
+        url = 'accounts/{0}/projects/{1}/{2}/profiles/{3}'.format(self.account_id, project_id, network, profile_id)
         self.__delete_from_api(url, jwt=self.jwt)
         pass
 
     def delete_project(self, project_id=None):
         project_id = self.__get_project_id(project_id)
 
-        url = 'v1/accounts/{0}/projects/{1}'.format(self.account_id, project_id)
+        url = 'accounts/{0}/projects/{1}'.format(self.account_id, project_id)
         self.__delete_from_api(url, jwt=self.jwt)
         pass
 
     def project_home_url(self):
-        return 'https://quantum.socialmetrix.com/#/accounts/{0}/projects/{1}/facebook/profiles/'.format(self.account_id,
-                                                                                                        self.project_id)
+        return '{0}/#/accounts/{1}/projects/{2}/facebook/profiles/'.format(self.ui_url, self.account_id, self.project_id)
 
     def users(self):
-        url = 'v1/accounts/{}/users'.format(self.account_id)
+        url = 'accounts/{}/users'.format(self.account_id)
         return self.__get_from_api(url, None, self.jwt)
 
     def facebook_posts(self, project_id=None, profile=None, since=None, until=None, limit=10):
@@ -145,7 +152,7 @@ class API:
         self.__required(since, "since is not set")
         self.__required(until, "until is not set")
 
-        url = 'v1/accounts/{}/projects/{}/facebook/profiles/{}/posts'.format(
+        url = 'accounts/{}/projects/{}/facebook/profiles/{}/posts'.format(
                 self.account_id,
                 project_id,
                 profile)
@@ -170,7 +177,7 @@ class API:
 
         # if len(profiles) == 0:
 
-        url = 'v1/accounts/{}/projects/{}/facebook/profiles/posts-interactions/count/date'.format(
+        url = 'accounts/{}/projects/{}/facebook/profiles/posts-interactions/count/date'.format(
                 self.account_id,
                 p_id)
 
@@ -189,7 +196,7 @@ class API:
         self.__required(since, "since is not set")
         self.__required(until, "until is not set")
 
-        url = 'v1/accounts/{}/projects/{}/{}/profiles/stat-summary'.format(
+        url = 'accounts/{}/projects/{}/{}/profiles/stat-summary'.format(
                 self.account_id,
                 project_id,
                 network.lower())
@@ -209,7 +216,7 @@ class API:
             raise Exception("ANALYST role needs to be invited to at least one project")
 
         payload = {'accountId': self.account_id, 'email': email, 'role': role, 'projectIds': list(projects)}
-        data = self.__post_to_api(url='v1/accounts/{0}/invites'.format(self.account_id),
+        data = self.__post_to_api(url='accounts/{0}/invites'.format(self.account_id),
                                   payload=payload,
                                   jwt=self.jwt)
         return data
