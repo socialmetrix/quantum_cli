@@ -26,7 +26,7 @@ def main():
     parser = argparse.ArgumentParser(prog="quantum_cli", description="Quantum Client Utility")
     parser.add_argument("--secret", help="set the api secret")
     parser.add_argument("--csv", help="Switch output to CSV format", action="store_true")
-    parser.add_argument("--api-url", help="Change the default api url")
+    parser.add_argument("--api-url", help="Change the default api url. eg: http://localhost/api/v1")
 
     subparsers = parser.add_subparsers(help='commands', dest='command')
 
@@ -34,6 +34,7 @@ def main():
     add_parser = subparsers.add_parser('add', help='Add profiles to a project')
     add_parser.add_argument("file", help="path for the file containing profiles to add", type=file)
     add_parser.add_argument("--project", help="the project id to insert", type=int)
+    add_parser.add_argument("--project-name", help="use the given name when creating a new project")
 
     # VIEW PROFILES command
     # view_parser = subparsers.add_parser('view', help='View profiles from a project')
@@ -62,7 +63,8 @@ def main():
                               default=10)
 
     # Listing Pages with Stats from a Social Network
-    view_profiles_parser = subparsers.add_parser('view-profiles', help="Show profiles (accounts) with statistics from a project")
+    view_profiles_parser = subparsers.add_parser('view-profiles',
+                                                 help="Show profiles (accounts) with statistics from a project")
     view_profiles_parser.add_argument("project_id", help='Project ID that contains the profile', type=int)
     view_profiles_parser.add_argument("since", help='Begin of date range, format: YYYY-MM-DD')
     view_profiles_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
@@ -76,7 +78,7 @@ def main():
             output_format = "csv"
 
         if args.command == 'add':
-            add_profiles(api, args.file, args.project)
+            add_profiles(api, args.file, args.project, args.project_name)
 
         # elif args.command == 'view':
         #     view_profiles(args.project, secret)
@@ -142,10 +144,15 @@ def build_api(secret, api_url):
     api.authenticate(secret)
     return api
 
-def add_profiles(api, filename, project_id):
+
+def add_profiles(api, filename, project_id, project_name=None):
+    if not project_name:
+        project_name = 'quantum_cli-{0}'.format(int(time.time()))
+
     if project_id is None:
-        p("Creating random project ...")
-        project_id = api.create_project(name='quantum_cli-{0}'.format(int(time.time())))
+        p("Creating project ... {}".format(project_name))
+        project_id = api.create_project(name=project_name)
+
     else:
         p("Using passed project_id: {}".format(project_id))
         api.project_id = project_id
@@ -303,9 +310,9 @@ def posts(api, project_id=None, profile_id=None, since=None, until=None, limit=1
     data = []
     for post_id, post_metadata in posts_metadata.iteritems():
         data.append(
-                # Build the line with relevant information, split the post_metadata array,
-                # leaving campaign info to the end of line
-                [post_id] + post_metadata[:1] + stats_data[post_id] + post_metadata[1:]
+            # Build the line with relevant information, split the post_metadata array,
+            # leaving campaign info to the end of line
+            [post_id] + post_metadata[:1] + stats_data[post_id] + post_metadata[1:]
         )
 
     headers = ['post_id', 'created_time', 'likes', 'comments', 'shares', 'interactions', 'engagement_rate',

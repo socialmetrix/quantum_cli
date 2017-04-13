@@ -2,8 +2,9 @@ import json
 
 import requests
 
+
 class API:
-    def __init__(self, api_url = None, ui_url = None):
+    def __init__(self, api_url=None, ui_url=None):
         self.jwt = None
         self.account_id = None
         self.project_id = None
@@ -33,7 +34,8 @@ class API:
         if 200 <= r.status_code < 300:
             return result
         else:
-            raise Exception('Error: ' + json.dumps(result))
+            print "WARN: " + json.dumps(result)
+            return {}
 
     def __post_to_api(self, url, payload, jwt=None):
         headers = self.__set_header(jwt)
@@ -43,13 +45,15 @@ class API:
         if 200 <= r.status_code < 300:
             return result
         else:
-            raise Exception('Error: ' + json.dumps(result))
+            print "WARN: " + json.dumps(result)
+            return {}
 
     def __delete_from_api(self, url, payload=None, jwt=None):
         headers = self.__set_header(jwt)
         r = requests.delete(self.__build_api_url(url), params=payload, data="{}", headers=headers)
         if not (200 <= r.status_code < 300):
-            raise Exception('Error: ' + r.text)
+            print "WARN: " + r.text
+            return {}
         pass
 
     def __get_project_id(self, project_id):
@@ -140,7 +144,8 @@ class API:
         pass
 
     def project_home_url(self):
-        return '{0}/#/accounts/{1}/projects/{2}/facebook/profiles/'.format(self.ui_url, self.account_id, self.project_id)
+        return '{0}/#/accounts/{1}/projects/{2}/facebook/profiles/'.format(self.ui_url, self.account_id,
+                                                                           self.project_id)
 
     def users(self):
         url = 'accounts/{}/users'.format(self.account_id)
@@ -153,9 +158,9 @@ class API:
         self.__required(until, "until is not set")
 
         url = 'accounts/{}/projects/{}/facebook/profiles/{}/posts'.format(
-                self.account_id,
-                project_id,
-                profile)
+            self.account_id,
+            project_id,
+            profile)
 
         # TODO: Implement field => offset:{"datetime":"2015-11-28T11:02:05-02:00","entity":"125812234121863_904218426281236"}
         # TODO: Implement field owner (admin or user)
@@ -178,8 +183,8 @@ class API:
         # if len(profiles) == 0:
 
         url = 'accounts/{}/projects/{}/facebook/profiles/posts-interactions/count/date'.format(
-                self.account_id,
-                p_id)
+            self.account_id,
+            p_id)
 
         ids = ','.join(list(profiles))
 
@@ -197,9 +202,9 @@ class API:
         self.__required(until, "until is not set")
 
         url = 'accounts/{}/projects/{}/{}/profiles/stat-summary'.format(
-                self.account_id,
-                project_id,
-                network.lower())
+            self.account_id,
+            project_id,
+            network.lower())
 
         ids = ','.join(list(profiles))
 
