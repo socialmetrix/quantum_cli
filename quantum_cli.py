@@ -32,7 +32,7 @@ def main():
 
     # ADD PROFILE command
     add_parser = subparsers.add_parser('add', help='Add profiles to a project')
-    add_parser.add_argument("file", help="path for the file containing profiles to add", type=file)
+    add_parser.add_argument("file", help="path for the file containing profiles to add", type=argparse.FileType('R'))
     add_parser.add_argument("--project", help="the project id to insert", type=int)
     add_parser.add_argument("--project-name", help="use the given name when creating a new project")
 
@@ -70,6 +70,10 @@ def main():
     view_profiles_parser.add_argument("until", help='End of date range, format: YYYY-MM-DD')
 
     try:
+        if len(sys.argv) == 1:
+            parser.print_help()
+            sys.exit(1)
+
         args = parser.parse_args()
         api = build_api(args.secret, args.api_url)
 
@@ -109,8 +113,8 @@ def main():
                                   since=args.since,
                                   until=args.until)
 
-    except IOError, msg:
-        parser.error(str(msg))
+    except Exception as msg:
+        parser.error(msg)
         sys.exit(1)
 
 
@@ -118,27 +122,24 @@ def main():
 #
 #
 #
-def p(content):
-    print unicode(content).encode("utf-8")
-
 
 def output(headers, data, mode="table"):
     if mode == "table":
-        p(tabulate(data, headers))
+        print(tabulate(data, headers))
 
     else:
         writer = csv.writer(sys.stdout)
         writer.writerows([headers])
         for line in data:
-            writer.writerows([[unicode(item).encode('utf-8') for item in line]])
+            writer.writerows([[item for item in line]])
 
 
 def build_api(secret, api_url):
     if secret is None:
         secret = os.environ.get('QUANTUM_SECRET')
         if secret is None:
-            p("Secret must be defined." +
-              "Please set a environment variable QUANTUM_SECRET or use the parameter --secret with your app secret")
+            print("Secret must be defined." +
+                  "Please set a environment variable QUANTUM_SECRET or use the parameter --secret with your app secret")
             sys.exit(1)
     api = quantum.API(api_url)
     api.authenticate(secret)
@@ -150,28 +151,28 @@ def add_profiles(api, filename, project_id, project_name=None):
         project_name = 'quantum_cli-{0}'.format(int(time.time()))
 
     if project_id is None:
-        p("Creating project ... {}".format(project_name))
+        print("Creating project ... {}".format(project_name))
         project_id = api.create_project(name=project_name)
 
     else:
-        p("Using passed project_id: {}".format(project_id))
+        print("Using passed project_id: {}".format(project_id))
         api.project_id = project_id
 
     for line in filename:
-        profile = line.rstrip('\r\n')
+        profile = line.rstriprint('\r\n')
         if profile.startswith('http'):
-            p("\tAdding profile {0} to project {1}".format(profile, project_id))
+            print("\tAdding profile {0} to project {1}".format(profile, project_id))
             api.add_profile(profile)
 
-    p("\n\nCheck the Project URL here: " + api.project_home_url())
+    print("\n\nCheck the Project URL here: " + api.project_home_url())
     pass
 
 
 def __extract_username_from_instagram_url(url):
-    p = re.compile('https://(www\.)?instagram\.com/([^/]+)')
+    p = re.compile(r'https://(www\.)?instagram\.com/([^/]+)')
     m = p.match(url)
     if m:
-        return m.group(2)
+        return m.grouprint(2)
     else:
         return None
 
@@ -193,30 +194,6 @@ def __extract_username_name_from_profile(profile):
         raise Exception('Unsupported source: ' + source)
 
 
-# def view_profiles(project_id, secret):
-#     api = quantum.API()
-#     api.authenticate(secret)
-#     if project_id is None:
-#         raise Exception('project_id must be provided')
-#     profiles = api.view_profiles(project_id)
-#     # p(u'# profile_name: {}\n#'.format(profiles['name']))
-#     headers = ['kind', 'id', 'url', 'username', 'name']
-#     data = []
-#     for profile in profiles['brands']:
-#         username, name = __extract_username_name_from_profile(profile)
-#
-#         data.append([
-#             profile['sourceType'],
-#             profile['source']['id'],
-#             profile['source']['url'],
-#             username,
-#             name
-#         ])
-#
-#     output(headers, data, output_format)
-#     pass
-
-
 def account_limits(api):
     raise Exception('Not Implemented Yet')
     pass
@@ -229,7 +206,7 @@ def delete_project(api, project_id):
     # Deleting profiles
     profiles = api.view_profiles(project_id)
     for profile in profiles['brands']:
-        p(u'Deleting profile {} ({})'.format(profile['source']['url'], profile['name']))
+        print(u'Deleting profile {} ({})'.format(profile['source']['url'], profile['name']))
         api.delete_profile(profile_id=profile['id'], project_id=project_id)
 
     # Deleting project

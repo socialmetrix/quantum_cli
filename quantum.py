@@ -27,14 +27,14 @@ class API:
     def __build_api_url(self, url):
         return '{0}/{1}'.format(self.api_url, url)
 
-    def __get_from_api(self, url, params, jwt=None):
+    def __get_from_api(self, url, params=None, jwt=None):
         headers = self.__set_header(jwt)
         r = requests.get(self.__build_api_url(url), params=params, headers=headers)
         result = r.json()
         if 200 <= r.status_code < 300:
             return result
         else:
-            print "WARN: " + json.dumps(result)
+            print("WARN: " + json.dumps(result))
             return {}
 
     def __post_to_api(self, url, payload, jwt=None):
@@ -45,14 +45,14 @@ class API:
         if 200 <= r.status_code < 300:
             return result
         else:
-            print "WARN: " + json.dumps(result)
+            print("WARN: " + json.dumps(result))
             return {}
 
     def __delete_from_api(self, url, payload=None, jwt=None):
         headers = self.__set_header(jwt)
         r = requests.delete(self.__build_api_url(url), params=payload, data="{}", headers=headers)
         if not (200 <= r.status_code < 300):
-            print "WARN: " + r.text
+            print("WARN: " + r.text)
             return {}
         pass
 
@@ -99,8 +99,7 @@ class API:
 
     def list_projects(self):
         url = 'accounts/{}/projects'.format(self.account_id)
-        data = self.__get_from_api(url, None, self.jwt)
-        return data
+        return self.__get_from_api(url, None, self.jwt)
 
     @staticmethod
     def __detect_network(content):
@@ -146,10 +145,6 @@ class API:
     def project_home_url(self):
         return '{0}/#/accounts/{1}/projects/{2}/facebook/profiles/'.format(self.ui_url, self.account_id,
                                                                            self.project_id)
-
-    def users(self):
-        url = 'accounts/{}/users'.format(self.account_id)
-        return self.__get_from_api(url, None, self.jwt)
 
     def facebook_posts(self, project_id=None, profile=None, since=None, until=None, limit=10):
         project_id = self.__get_project_id(project_id)
@@ -216,6 +211,10 @@ class API:
 
         return self.__get_from_api(url, params, self.jwt)
 
+    def users(self):
+        url = 'accounts/{}/users'.format(self.account_id)
+        return self.__get_from_api(url, jwt=self.jwt)
+
     def invite_user(self, email, role='MANAGER', *projects):
         if role == 'ANALYST' and len(projects) == 0:
             raise Exception("ANALYST role needs to be invited to at least one project")
@@ -225,3 +224,7 @@ class API:
                                   payload=payload,
                                   jwt=self.jwt)
         return data
+
+    def delete_user(self, user_id):
+        url = 'accounts/{0}/users/{1}'.format(self.account_id, user_id)
+        return self.__delete_from_api(url=url, jwt=self.jwt)
