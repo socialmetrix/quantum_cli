@@ -84,8 +84,7 @@ for stats in pages_stats['results']:
     print(stats['data']['current'])
 
 # invite a user to project(s)
-api.invite_user('email@address.net', 'ANALYST', 25, 14, 16)
-
+api.invite_user('email@address.net', 'Test', 'User', role='ANALYST', projects=[42, 43, 44])
 
 # remove users from projects
 users = api.users()
@@ -95,9 +94,6 @@ user_ids = list(user['id'] for user in users if project_id in user['projectIds']
 for id in user_ids:
   print(id)
   api.delete_user(id)
-
-
-
 ```
 
 ## Usage Examples

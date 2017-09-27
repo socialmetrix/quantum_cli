@@ -1,5 +1,7 @@
+__pycache__
 *.pyc
 test.txt
 profiles-to-add.txt
 .idea
 campaign-results-sample.json
+bulk_invite.py
