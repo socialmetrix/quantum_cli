@@ -9,7 +9,7 @@ class API:
         self.account_id = None
         self.project_id = None
         if api_url is None:
-            self.api_url = 'https://api.quantum.socialmetrix.com/v1'
+            self.api_url = 'https://quantum.socialmetrix.com/api/v1'
         else:
             self.api_url = api_url
         if ui_url is None:
